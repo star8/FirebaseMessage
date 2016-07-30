@@ -17,9 +17,17 @@ package lab.star.firebase.FirebaseMessage;
  */
 
 public class Notification {
+	private String body;
+	private String title;
+	private String icon;
+	private Notification(){
+		
+	}
 	
-	public Notification body(String body){
-		return this;
+	public static Notification body(String body){
+		Notification notification=new Notification();
+		notification.body=body;
+		return notification;
 	}
 	public Notification title(String body){
 		return this;

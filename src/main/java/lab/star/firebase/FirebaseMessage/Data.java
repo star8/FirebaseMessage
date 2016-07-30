@@ -22,13 +22,19 @@ public class Data {
 	private boolean collapsible;
 	private HashMap<String, Object> data;
 	
-	public Data add(String key, Object value){
-		if (data==null){
-			data=new HashMap<String, Object>();
-		}
-		data.put(key, value);
-		return this;
+	private void Data(){
+		data=new HashMap<String, Object>();
+	}
+	
+	public static Data add(String key, Object value){
+		Data data=new Data();
+		data.data.put(key, value);
+		return data;
 		
+	}
+	public Data collapsible(boolean collapsible){
+		this.collapsible=collapsible;
+		return this;
 	}
 
 }
