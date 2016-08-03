@@ -20,7 +20,7 @@ import java.util.HashMap;
 
 public class Data {
 	
-	public HashMap<String, Object> data;
+	private HashMap<String, Object> data;
 	
 	private Data(){
 		data=new HashMap<String, Object>();
@@ -31,6 +31,14 @@ public class Data {
 		data.data.put(key, value);
 		return data;
 		
+	}
+
+	public HashMap<String, Object> getData() {
+		return data;
+	}
+
+	public void setData(HashMap<String, Object> data) {
+		this.data = data;
 	}
 	
 
