@@ -19,7 +19,7 @@ package lab.star.firebase.FirebaseMessage;
 import java.util.HashMap;
 
 public class Data {
-	private boolean collapsible;
+	
 	private HashMap<String, Object> data;
 	
 	private void Data(){
@@ -32,9 +32,6 @@ public class Data {
 		return data;
 		
 	}
-	public Data collapsible(boolean collapsible){
-		this.collapsible=collapsible;
-		return this;
-	}
+	
 
 }

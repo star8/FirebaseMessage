@@ -29,6 +29,7 @@ public class FirebaseMessage {
 	private Notification notification;
 	private Priority priority;
 	private int ttl=-1;
+	private boolean collapsible;
 	
 	private FirebaseMessage(){
 		super();
@@ -41,6 +42,10 @@ public class FirebaseMessage {
 		FirebaseMessage firebaseMessage=new FirebaseMessage();
 		firebaseMessage.registrationToken=registration_token;
 		return firebaseMessage;
+	}
+	public FirebaseMessage collapsible(boolean collapsible){
+		this.collapsible=collapsible;
+		return this;
 	}
 	public FirebaseMessage data(Data data){
 		this.data=data;
