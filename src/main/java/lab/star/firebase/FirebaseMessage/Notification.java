@@ -1,5 +1,8 @@
 package lab.star.firebase.FirebaseMessage;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
 /*
  * Copyright (C) 2016 Star labs.
  *
@@ -15,7 +18,7 @@ package lab.star.firebase.FirebaseMessage;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+@JsonInclude(Include.NON_NULL)
 public class Notification {
 	private String body;
 	private String title;
@@ -36,4 +39,29 @@ public class Notification {
 		return this;
 	}
 
+	public String getBody() {
+		return body;
+	}
+
+	public void setBody(String body) {
+		this.body = body;
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public String getIcon() {
+		return icon;
+	}
+
+	public void setIcon(String icon) {
+		this.icon = icon;
+	}
+
+	
 }

@@ -16,7 +16,13 @@ package lab.star.firebase.FirebaseMessage;
  * limitations under the License.
  */
 
+import java.io.IOException;
+
 import org.apache.http.HttpResponse;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class FirebaseMessage {
 	enum Priority{
@@ -64,12 +70,32 @@ public class FirebaseMessage {
 		return this;
 	}
 	
+	public ObjectNode getPayload(){
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode object = mapper.createObjectNode();
+		object.putPOJO("notification", notification);
+		object.putPOJO("data", data);
+		object.put("to", userId);
+		object.put("collapse_key", collapsible);
+		object.put("priority", priority.toString());
+		object.put("collapse_key", collapsible);
+		return object;
+	}
+	
 	/**
 	 * Synchronous message sending options
 	 * @param notification
 	 */
 	
 	public HttpResponse send(){
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			System.out.println(mapper.writeValueAsString(getPayload()));
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		return null;
 		
 	}

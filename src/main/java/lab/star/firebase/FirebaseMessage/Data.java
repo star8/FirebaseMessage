@@ -20,9 +20,9 @@ import java.util.HashMap;
 
 public class Data {
 	
-	private HashMap<String, Object> data;
+	public HashMap<String, Object> data;
 	
-	private void Data(){
+	private Data(){
 		data=new HashMap<String, Object>();
 	}
 	
