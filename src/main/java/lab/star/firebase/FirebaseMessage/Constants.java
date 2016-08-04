@@ -19,6 +19,30 @@ public final class Constants {
 	
 
   /**
+   * Parameter for Header content-type.
+   */
+
+  public static final String PARAM_HEADER_CONTENT_TYPE = "Content-Type";
+ 
+  /**
+   * value for default connection time-Out.
+   */
+
+  public static final int DEFAUTL_CONNECTION_TIMEOUT = 10;
+
+  /**
+   * Parameter value for Header content-type.
+   */
+
+  public static final String HEADER_CONTENT_TYPE_JSON = "application/json";
+  
+  /**
+   * Parameter for Header authorization server-key.
+   */
+
+  public static final String PARAM_HEADER_SERVER_KEY = "Authorization";
+  
+  /**
    * Parameter for to field.
    */
 

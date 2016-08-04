@@ -16,10 +16,22 @@ package lab.star.firebase.FirebaseMessage;
  * limitations under the License.
  */
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.protocol.ResponseAuthCache;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -47,6 +59,7 @@ public class FirebaseMessage {
 	private int ttl = -1;
 	private boolean collapsible;
 	private boolean delayWhileIdeal;
+	private int connTimeOut;
 
 	private FirebaseMessage() {
 		super();
@@ -63,6 +76,11 @@ public class FirebaseMessage {
 		return firebaseMessage;
 	}
 
+	public FirebaseMessage connTimeOut(int connTimeOut) {
+		this.connTimeOut = connTimeOut;
+		return this;
+	}
+	
 	public FirebaseMessage collapsible(boolean collapsible) {
 		this.collapsible = collapsible;
 		return this;
@@ -122,7 +140,43 @@ public class FirebaseMessage {
 	 */
 
 	public HttpResponse send() {
-		return null;
+		
+		HttpClient client = HttpClientBuilder.create().build();
+		HttpPost post = new HttpPost(Constants.FCM_SEND_ENDPOINT);
+		if(connTimeOut==0)
+			this.connTimeOut=Constants.DEFAUTL_CONNECTION_TIMEOUT;
+		
+		RequestConfig config = RequestConfig.custom()
+			    .setConnectionRequestTimeout(connTimeOut*1000)
+			    .setConnectTimeout(connTimeOut*1000)
+			    .setSocketTimeout(connTimeOut*1000)
+			    .build();
+		post.setConfig(config);
+		post.setHeader(Constants.PARAM_HEADER_SERVER_KEY, registrationToken);
+		post.setHeader(Constants.PARAM_HEADER_CONTENT_TYPE, Constants.HEADER_CONTENT_TYPE_JSON );
+		
+		
+		String jsonBody="";
+		try {
+			jsonBody = new ObjectMapper().writeValueAsString(getPayload());
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+//		System.out.println(jsonBody);
+		post.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
+		
+		HttpResponse response=null;
+		try {
+			response = client.execute(post);
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return response;
 
 	}
 
