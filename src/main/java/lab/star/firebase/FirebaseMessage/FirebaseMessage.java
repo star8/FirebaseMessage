@@ -20,14 +20,10 @@ import java.io.IOException;
 
 import org.apache.http.HttpResponse;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class FirebaseMessage {
-	public static final String COLLAPSE_KEY="collapse_key"; 
 	enum Priority {
 		NORMAL("normal"), HIGH("high");
 		private final String value;
@@ -106,16 +102,16 @@ public class FirebaseMessage {
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode object = mapper.createObjectNode(); 
 		if(notification!=null)
-		object.putPOJO(JsonKey.NOTIFICATION, notification);
+		object.putPOJO(Constants.JSON_NOTIFICATION, notification);
 		if(data!=null)
-		object.putPOJO(JsonKey.DATA, data.getData());
-		object.put(JsonKey.TO, userId);
-		object.put(JsonKey.PRIORITY, priority.toString());
+		object.putPOJO(Constants.JSON_PAYLOAD, data.getData());
+		object.put(Constants.PARAM_TO, userId);
+		object.put(Constants.PARAM_PRIORITY, priority.toString());
 		if(ttl>0)
-		object.put(JsonKey.TIME_TO_LIVE, ttl);
-		object.put(JsonKey.DELAY_WHILE_IDLE, delayWhileIdeal);
+		object.put(Constants.PARAM_TIME_TO_LIVE, ttl);
+		object.put(Constants.PARAM_DELAY_WHILE_IDLE, delayWhileIdeal);
 		if(collapsible)
-			object.put(JsonKey.COLLAPSE_KEY, COLLAPSE_KEY);
+			object.put(Constants.PARAM_COLLAPSE_KEY, Constants.COLLAPSE_KEY);
 		return object;
 	}
 
@@ -126,16 +122,6 @@ public class FirebaseMessage {
 	 */
 
 	public HttpResponse send() {
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.setSerializationInclusion(Include.NON_NULL);
-		mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
-		try {
-			System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(getPayload()));
-		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
 		return null;
 
 	}
@@ -148,19 +134,5 @@ public class FirebaseMessage {
 	public void send(DelivaryNotification notification) {
 
 
-	}
-
-	interface JsonKey {
-		final String NOTIFICATION = "notification";
-		final String DATA = "data";
-		final String TO = "to";
-		final String COLLAPSE_KEY = "collapse_key";
-		final String PRIORITY = "priority";
-		final String REGISTRATION_IDS = "registration_ids";
-		final String TIME_TO_LIVE = "time_to_live";
-		final String DELAY_WHILE_IDLE = "delay_while_idle";
-		final String CONTENT_AVAILABLE = "content_available";
-		final String RESTRICTED_PACKAGE_NAME = "restricted_package_name";
-		final String DRY_RUN = "dry_run";
 	}
 }
