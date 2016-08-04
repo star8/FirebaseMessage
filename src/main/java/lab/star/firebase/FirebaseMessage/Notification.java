@@ -2,6 +2,7 @@ package lab.star.firebase.FirebaseMessage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /*
  * Copyright (C) 2016 Star labs.
@@ -20,48 +21,29 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
  */
 @JsonInclude(Include.NON_NULL)
 public class Notification {
+	@JsonProperty
 	private String body;
+	@JsonProperty
 	private String title;
+	@JsonProperty
 	private String icon;
-	private Notification(){
-		
+
+	private Notification() {
+
 	}
-	
-	public static Notification body(String body){
-		Notification notification=new Notification();
-		notification.body=body;
+
+	public static Notification body(String body) {
+		Notification notification = new Notification();
+		notification.body = body;
 		return notification;
 	}
-	public Notification title(String body){
+
+	public Notification title(String body) {
 		return this;
 	}
-	public Notification icon(String body){
+
+	public Notification icon(String body) {
 		return this;
 	}
 
-	public String getBody() {
-		return body;
-	}
-
-	public void setBody(String body) {
-		this.body = body;
-	}
-
-	public String getTitle() {
-		return title;
-	}
-
-	public void setTitle(String title) {
-		this.title = title;
-	}
-
-	public String getIcon() {
-		return icon;
-	}
-
-	public void setIcon(String icon) {
-		this.icon = icon;
-	}
-
-	
 }
