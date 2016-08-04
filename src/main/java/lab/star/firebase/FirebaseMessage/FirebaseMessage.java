@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class FirebaseMessage {
+	public static final String COLLAPSE_KEY="collapse_key"; 
 	enum Priority {
 		NORMAL("normal"), HIGH("high");
 		private final String value;
@@ -113,6 +114,8 @@ public class FirebaseMessage {
 		if(ttl>0)
 		object.put(JsonKey.TIME_TO_LIVE, ttl);
 		object.put(JsonKey.DELAY_WHILE_IDLE, delayWhileIdeal);
+		if(collapsible)
+			object.put(JsonKey.COLLAPSE_KEY, COLLAPSE_KEY);
 		return object;
 	}
 
