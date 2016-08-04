@@ -18,11 +18,16 @@ package lab.star.firebase.FirebaseMessage;
 
 import java.util.HashMap;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+
+@JsonInclude(Include.NON_NULL)
 public class Data {
-	
+	@JsonProperty
 	private HashMap<String, Object> data;
 	
-	private void Data(){
+	private Data(){
 		data=new HashMap<String, Object>();
 	}
 	
@@ -31,6 +36,10 @@ public class Data {
 		data.data.put(key, value);
 		return data;
 		
+	}
+
+	HashMap<String, Object> getData() {
+		return data;
 	}
 	
 
