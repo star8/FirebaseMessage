@@ -17,30 +17,62 @@ package lab.star.firebase.FirebaseMessage;
  */
 
 import java.util.HashMap;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(Include.NON_NULL)
 public class Data {
 	@JsonProperty
-	private HashMap<String, Object> data;
-	
-	private Data(){
-		data=new HashMap<String, Object>();
+	private HashMap<String, Object> map;
+	private static Data instance = null;
+
+	private Data() {
+		map = new HashMap<String, Object>();
 	}
-	
-	public static Data add(String key, Object value){
-		Data data=new Data();
-		data.data.put(key, value);
-		return data;
-		
+
+	public static Data add(String key, Object value) {
+		if (instance == null) {
+			instance = new Data();
+		}
+		instance.map.put(key, value);
+		return instance;
 	}
 
 	HashMap<String, Object> getData() {
-		return data;
+		return this.map;
+
 	}
-	
+
+	public Data data(HashMap<String, Object> map) {
+		Set<String> keys = map.keySet();
+		for (String key : keys) {
+			this.map.put(key, map.get(key));
+		}
+		return this;
+	}
+
+	public Data data(String key, String value) {
+		if (!map.containsKey(key))
+			map.put(key, value);
+		return this;
+	}
+
+	public Data data(String json) {
+		// copy data from json to map
+		return this;
+	}
+
+	public Data clear() {
+		map.clear();
+		return this;
+	}
+
+	public Data remove(String key) {
+		map.remove(key);
+		return this;
+	}
 
 }
