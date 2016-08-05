@@ -1,32 +1,23 @@
-# Firebase Server Helper Liberary
+# Firebase Message
 
-This project is java wrapper for FCM app server. 
-It implements all rest endpoint required to send messages to all client application.
-The wrappers help to configure & foramt all parameters required to send downstream message.
-Also makes developer to free from all hassels of interacting manually with rest api endpoints.  
+A Java library to help you send downstream message to a client. 
 
-# Firebase Cloud Messaging
+## Installation
 
-Firebase Cloud Messaging (FCM) is a service that lets developers send data from
-servers to users' devices, and receive messages from devices on the same
-connection. The service provides a simple, lightweight mechanism that servers
-can use to tell mobile applications to contact the server directly to fetch
-updated application user data. The Firebase Cloud Messaging service handles all aspects of queueing
-of messages and delivery to client applications running on target devices.
-
-This project contains server libraries to help developers interface
-with and explore the Firebase Cloud Messaging APIs.
-
-For more information on Firebase Cloud Messages, including an overview and integration
-instructions, see [Cloud Messaging](https://firebase.google.com/docs/cloud-messaging/).
-
-For help getting started with FCM, see the
-[FCM Quickstart for Android](https://firebase.google.com/docs/cloud-messaging/android/client)
-or the [GCM Quickstart for iOS](https://firebase.google.com/docs/cloud-messaging/ios/client).
-
-## Support
-
-- Stack Overflow: http://stackoverflow.com/questions/tagged/firebase-cloud-messaging
+## Sample usage
 
 ## License
 
+  Copyright (C) 2016 Star labs.
+ 
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+ 
+       http://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
