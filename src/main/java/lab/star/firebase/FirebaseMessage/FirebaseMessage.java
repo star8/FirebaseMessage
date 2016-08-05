@@ -17,6 +17,11 @@ package lab.star.firebase.FirebaseMessage;
  */
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpResponse;
 
@@ -145,9 +150,35 @@ public class FirebaseMessage {
 	 * 
 	 * @param notification
 	 */
-	public void send(DelivaryNotification notification) {
+	public void send(final DelivaryNotification notification) {
+		if (notification==null) throw new IllegalArgumentException("Invalid Parameter");
+		ExecutorService executor = Executors.newFixedThreadPool(1);
+		AsyncNetworkTask task=new AsyncNetworkTask(this);
+		Future<DelivaryNotification> response=executor.submit(task);
+		DelivaryNotification result=null;
+		try {
+			result=response.get(10, TimeUnit.SECONDS);
+		} catch (Exception e) {
+			notification.onFailed(e, this);
+		} 
+		executor.shutdown();
+		if (result!=null){
+			notification.onSuccess(this);
+		}
+	}
+	
+	class AsyncNetworkTask implements Callable<DelivaryNotification>{
+		final FirebaseMessage message;
+		AsyncNetworkTask(FirebaseMessage message){
+			this.message=message;
+		}
 
-
+		public DelivaryNotification call() throws Exception {
+			// use regular http code here and do not catch exception
+			
+			return null;
+		}
+		
 	}
 
 	interface JsonKey {
