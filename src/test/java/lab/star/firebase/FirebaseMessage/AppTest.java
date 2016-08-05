@@ -19,7 +19,7 @@ public class AppTest
     {
         super( testName );
         
-        FirebaseMessage.intialize("xyz").data(Data.add("key", "value")).send();
+        FirebaseMessage.intialize("xyz").data(Data.getInstance().add("key", "value")).send();
     }
 
     /**
