@@ -161,7 +161,7 @@ public class FirebaseMessage {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println(jsonBody);
+//		System.out.println(jsonBody);
 		post.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
 		
 		HttpResponse response=null;
@@ -174,28 +174,28 @@ public class FirebaseMessage {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		BufferedReader rd=null;
-		try {
-			rd = new BufferedReader(
-			        new InputStreamReader(response.getEntity().getContent()));
-		} catch (UnsupportedOperationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-		StringBuffer result = new StringBuffer();
-		String line = "";
-		try {
-			while ((line = rd.readLine()) != null) {
-				result.append(line);
-			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		System.out.println(result);
+//		BufferedReader rd=null;
+//		try {
+//			rd = new BufferedReader(
+//			        new InputStreamReader(response.getEntity().getContent()));
+//		} catch (UnsupportedOperationException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} 
+//		StringBuffer result = new StringBuffer();
+//		String line = "";
+//		try {
+//			while ((line = rd.readLine()) != null) {
+//				result.append(line);
+//			}
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		System.out.println(result);
 		return response;
 
 	}
