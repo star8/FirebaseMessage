@@ -17,6 +17,7 @@ package lab.star.firebase.FirebaseMessage;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -61,6 +62,7 @@ public class FirebaseMessage {
 	private boolean collapsible;
 	private boolean delayWhileIdeal;
 	private int connTimeOut;
+	private List<String> regIds;
 
 	private FirebaseMessage() {
 		super();
@@ -73,6 +75,11 @@ public class FirebaseMessage {
 
 	public FirebaseMessage to(String to) {
 		this.userId = to;
+		return this;
+	}
+	
+	public FirebaseMessage to(List<String> regIds) {
+		this.regIds = regIds;
 		return this;
 	}
 
@@ -129,10 +136,13 @@ public class FirebaseMessage {
 			object.putPOJO(Constants.JSON_NOTIFICATION, notification);
 		if (data != null)
 			object.putPOJO(Constants.JSON_PAYLOAD, data.getData());
+		if(userId!=null && !userId.isEmpty())
 		object.put(Constants.PARAM_TO, userId);
 		object.put(Constants.PARAM_PRIORITY, priority.toString());
 		object.put(Constants.PARAM_TIME_TO_LIVE, ttl);
 		object.put(Constants.PARAM_DELAY_WHILE_IDLE, delayWhileIdeal);
+		if(regIds!=null && !regIds.isEmpty())
+			object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
 		if (collapsible)
 			object.put(Constants.PARAM_COLLAPSE_KEY, Constants.COLLAPSE_KEY);
 		return object;
@@ -165,7 +175,7 @@ public class FirebaseMessage {
 		} catch (JsonProcessingException e) {
 			e.printStackTrace();
 		}
-		// System.out.println(jsonBody);
+//		 System.out.println(jsonBody);
 		post.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
 
 		HttpResponse response = null;
@@ -179,6 +189,7 @@ public class FirebaseMessage {
 		return response;
 
 	}
+	
 
 	/**
 	 * Asynchronous message sending options
