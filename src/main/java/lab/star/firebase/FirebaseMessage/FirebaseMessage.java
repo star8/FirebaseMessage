@@ -19,14 +19,12 @@ package lab.star.firebase.FirebaseMessage;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.protocol.ResponseAuthCache;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -72,7 +70,7 @@ public class FirebaseMessage {
 
 	public static FirebaseMessage intialize(String registration_token) {
 		FirebaseMessage firebaseMessage = new FirebaseMessage();
-		firebaseMessage.registrationToken = registration_token;
+		firebaseMessage.registrationToken = "key="+registration_token;
 		return firebaseMessage;
 	}
 
@@ -158,12 +156,12 @@ public class FirebaseMessage {
 		
 		String jsonBody="";
 		try {
-			jsonBody = new ObjectMapper().writeValueAsString(getPayload());
+			jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(getPayload());
 		} catch (JsonProcessingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-//		System.out.println(jsonBody);
+		System.out.println(jsonBody);
 		post.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
 		
 		HttpResponse response=null;
@@ -176,6 +174,28 @@ public class FirebaseMessage {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		BufferedReader rd=null;
+		try {
+			rd = new BufferedReader(
+			        new InputStreamReader(response.getEntity().getContent()));
+		} catch (UnsupportedOperationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		StringBuffer result = new StringBuffer();
+		String line = "";
+		try {
+			while ((line = rd.readLine()) != null) {
+				result.append(line);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println(result);
 		return response;
 
 	}
