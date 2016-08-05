@@ -38,11 +38,13 @@ public class Notification {
 		return notification;
 	}
 
-	public Notification title(String body) {
+	public Notification title(String title) {
+		this.title=title;
 		return this;
 	}
 
-	public Notification icon(String body) {
+	public Notification icon(String icon) {
+		this.icon=icon;
 		return this;
 	}
 
