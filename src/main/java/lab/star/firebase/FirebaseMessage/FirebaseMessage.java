@@ -16,23 +16,32 @@ package lab.star.firebase.FirebaseMessage;
  * limitations under the License.
  */
 
+import java.io.BufferedReader;
 import java.io.IOException;
+<<<<<<< HEAD
+import java.io.InputStreamReader;
+=======
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+>>>>>>> 9d0235556d7683ea0bc67006e4c97d3d73e70879
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class FirebaseMessage {
-	public static final String COLLAPSE_KEY="collapse_key"; 
 	enum Priority {
 		NORMAL("normal"), HIGH("high");
 		private final String value;
@@ -56,6 +65,7 @@ public class FirebaseMessage {
 	private int ttl = -1;
 	private boolean collapsible;
 	private boolean delayWhileIdeal;
+	private int connTimeOut;
 
 	private FirebaseMessage() {
 		super();
@@ -68,10 +78,15 @@ public class FirebaseMessage {
 
 	public static FirebaseMessage intialize(String registration_token) {
 		FirebaseMessage firebaseMessage = new FirebaseMessage();
-		firebaseMessage.registrationToken = registration_token;
+		firebaseMessage.registrationToken = "key="+registration_token;
 		return firebaseMessage;
 	}
 
+	public FirebaseMessage connTimeOut(int connTimeOut) {
+		this.connTimeOut = connTimeOut;
+		return this;
+	}
+	
 	public FirebaseMessage collapsible(boolean collapsible) {
 		this.collapsible = collapsible;
 		return this;
@@ -111,16 +126,16 @@ public class FirebaseMessage {
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode object = mapper.createObjectNode(); 
 		if(notification!=null)
-		object.putPOJO(JsonKey.NOTIFICATION, notification);
+		object.putPOJO(Constants.JSON_NOTIFICATION, notification);
 		if(data!=null)
-		object.putPOJO(JsonKey.DATA, data.getData());
-		object.put(JsonKey.TO, userId);
-		object.put(JsonKey.PRIORITY, priority.toString());
+		object.putPOJO(Constants.JSON_PAYLOAD, data.getData());
+		object.put(Constants.PARAM_TO, userId);
+		object.put(Constants.PARAM_PRIORITY, priority.toString());
 		if(ttl>0)
-		object.put(JsonKey.TIME_TO_LIVE, ttl);
-		object.put(JsonKey.DELAY_WHILE_IDLE, delayWhileIdeal);
+		object.put(Constants.PARAM_TIME_TO_LIVE, ttl);
+		object.put(Constants.PARAM_DELAY_WHILE_IDLE, delayWhileIdeal);
 		if(collapsible)
-			object.put(JsonKey.COLLAPSE_KEY, COLLAPSE_KEY);
+			object.put(Constants.PARAM_COLLAPSE_KEY, Constants.COLLAPSE_KEY);
 		return object;
 	}
 
@@ -131,17 +146,65 @@ public class FirebaseMessage {
 	 */
 
 	public HttpResponse send() {
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.setSerializationInclusion(Include.NON_NULL);
-		mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
+		
+		HttpClient client = HttpClientBuilder.create().build();
+		HttpPost post = new HttpPost(Constants.FCM_SEND_ENDPOINT);
+		if(connTimeOut==0)
+			this.connTimeOut=Constants.DEFAUTL_CONNECTION_TIMEOUT;
+		
+		RequestConfig config = RequestConfig.custom()
+			    .setConnectionRequestTimeout(connTimeOut*1000)
+			    .setConnectTimeout(connTimeOut*1000)
+			    .setSocketTimeout(connTimeOut*1000)
+			    .build();
+		post.setConfig(config);
+		post.setHeader(Constants.PARAM_HEADER_SERVER_KEY, registrationToken);
+		post.setHeader(Constants.PARAM_HEADER_CONTENT_TYPE, Constants.HEADER_CONTENT_TYPE_JSON );
+		
+		
+		String jsonBody="";
 		try {
-			System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(getPayload()));
+			jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(getPayload());
 		} catch (JsonProcessingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		return null;
+//		System.out.println(jsonBody);
+		post.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
+		
+		HttpResponse response=null;
+		try {
+			response = client.execute(post);
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+//		BufferedReader rd=null;
+//		try {
+//			rd = new BufferedReader(
+//			        new InputStreamReader(response.getEntity().getContent()));
+//		} catch (UnsupportedOperationException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} 
+//		StringBuffer result = new StringBuffer();
+//		String line = "";
+//		try {
+//			while ((line = rd.readLine()) != null) {
+//				result.append(line);
+//			}
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		System.out.println(result);
+		return response;
 
 	}
 
@@ -179,19 +242,5 @@ public class FirebaseMessage {
 			return null;
 		}
 		
-	}
-
-	interface JsonKey {
-		final String NOTIFICATION = "notification";
-		final String DATA = "data";
-		final String TO = "to";
-		final String COLLAPSE_KEY = "collapse_key";
-		final String PRIORITY = "priority";
-		final String REGISTRATION_IDS = "registration_ids";
-		final String TIME_TO_LIVE = "time_to_live";
-		final String DELAY_WHILE_IDLE = "delay_while_idle";
-		final String CONTENT_AVAILABLE = "content_available";
-		final String RESTRICTED_PACKAGE_NAME = "restricted_package_name";
-		final String DRY_RUN = "dry_run";
 	}
 }

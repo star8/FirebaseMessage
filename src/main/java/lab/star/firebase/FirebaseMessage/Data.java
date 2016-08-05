@@ -31,14 +31,18 @@ public class Data {
 		data=new HashMap<String, Object>();
 	}
 	
-	public static Data add(String key, Object value){
-		Data data=new Data();
-		data.data.put(key, value);
-		return data;
+	public Data add(String key, Object value){
+		this.data.put(key, value);
+		return this;
+		
+	}
+	public HashMap<String, Object> getData(){
+		return this.data;
 		
 	}
 
-	HashMap<String, Object> getData() {
+	public static Data getInstance() {
+		Data data=new Data();
 		return data;
 	}
 	
