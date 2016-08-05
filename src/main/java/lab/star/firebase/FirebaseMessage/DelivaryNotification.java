@@ -20,6 +20,6 @@ import org.apache.http.HttpResponse;
 
 public interface DelivaryNotification {
 	public void onSuccess(FirebaseMessage firebase);
-	public void onFailed(HttpResponse response, FirebaseMessage firebase);
+	public void onFailed(Exception exception, FirebaseMessage firebase);
 
 }
