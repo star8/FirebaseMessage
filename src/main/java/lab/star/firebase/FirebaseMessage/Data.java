@@ -19,32 +19,51 @@ package lab.star.firebase.FirebaseMessage;
 import java.util.HashMap;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonInclude(Include.NON_NULL)
 public class Data {
 	@JsonProperty
-	private HashMap<String, Object> data;
-	
-	private Data(){
-		data=new HashMap<String, Object>();
-	}
-	
-	public Data add(String key, Object value){
-		this.data.put(key, value);
-		return this;
-		
-	}
-	public HashMap<String, Object> getData(){
-		return this.data;
-		
+	private HashMap<String, Object> map;
+	private static Data instance = null;
+
+	public Data() {
+		map = new HashMap<String, Object>();
 	}
 
-	public static Data getInstance() {
-		Data data=new Data();
-		return data;
+	public static Data add(String key, Object value) {
+		if (instance == null) {
+			instance = new Data();
+		}
+		instance.map.put(key, value);
+		return instance;
 	}
+
 	
+
+	public Data set(HashMap<String, Object> map) {
+		this.map = map;
+		return this;
+	}
+
+	public Data set(String json) {
+		// copy data from json to map
+		return this;
+	}
+
+	public Data clear() {
+		map.clear();
+		return this;
+	}
+
+	public Data remove(String key) {
+		map.remove(key);
+		return this;
+	}
+	HashMap<String, Object> getData() {
+		return this.map;
+
+	}
 
 }
