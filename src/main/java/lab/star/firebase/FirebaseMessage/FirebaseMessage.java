@@ -57,13 +57,18 @@ public class FirebaseMessage {
 	private Data data;
 	private Notification notification;
 	private Priority priority;
-	private int ttl = -1;
+	private int ttl;
 	private boolean collapsible;
 	private boolean delayWhileIdeal;
 	private int connTimeOut;
 
 	private FirebaseMessage() {
 		super();
+		this.priority=Priority.NORMAL;
+		this.ttl=Constants.DEFAUTL_TIME_TO_LIVE;
+		this.collapsible=false;
+		this.delayWhileIdeal=false;
+		this.connTimeOut= Constants.DEFAUTL_CONNECTION_TIMEOUT;
 	}
 
 	public FirebaseMessage to(String to) {
@@ -126,8 +131,7 @@ public class FirebaseMessage {
 			object.putPOJO(Constants.JSON_PAYLOAD, data.getData());
 		object.put(Constants.PARAM_TO, userId);
 		object.put(Constants.PARAM_PRIORITY, priority.toString());
-		if (ttl > 0)
-			object.put(Constants.PARAM_TIME_TO_LIVE, ttl);
+		object.put(Constants.PARAM_TIME_TO_LIVE, ttl);
 		object.put(Constants.PARAM_DELAY_WHILE_IDLE, delayWhileIdeal);
 		if (collapsible)
 			object.put(Constants.PARAM_COLLAPSE_KEY, Constants.COLLAPSE_KEY);
@@ -208,6 +212,38 @@ public class FirebaseMessage {
 
 		public DelivaryNotification call() throws Exception {
 			// use regular http code here and do not catch exception
+			HttpClient client = HttpClientBuilder.create().build();
+			HttpPost post = new HttpPost(Constants.FCM_SEND_ENDPOINT);
+			if(connTimeOut==0)
+				message.connTimeOut=Constants.DEFAUTL_CONNECTION_TIMEOUT;
+			
+			RequestConfig config = RequestConfig.custom()
+				    .setConnectionRequestTimeout(connTimeOut*1000)
+				    .setConnectTimeout(connTimeOut*1000)
+				    .setSocketTimeout(connTimeOut*1000)
+				    .build();
+			post.setConfig(config);
+			post.setHeader(Constants.PARAM_HEADER_SERVER_KEY, registrationToken);
+			post.setHeader(Constants.PARAM_HEADER_CONTENT_TYPE, Constants.HEADER_CONTENT_TYPE_JSON );
+			
+			
+			String jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(getPayload());
+			
+			System.out.println(jsonBody);
+			post.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
+			
+			HttpResponse response = client.execute(post);
+			
+			BufferedReader rd = new BufferedReader(
+			        new InputStreamReader(response.getEntity().getContent()));;
+			 
+			StringBuffer result = new StringBuffer();
+			String line = "";
+				while ((line = rd.readLine()) != null) {
+					result.append(line);
+				}
+			
+			System.out.println(result);
 			return null;
 		}
 
@@ -238,6 +274,13 @@ public class FirebaseMessage {
 		 */
 
 		private static final int DEFAUTL_CONNECTION_TIMEOUT = 10;
+		
+		/**
+		 * value for default connection time-Out.
+		 */
+
+		private static final int DEFAUTL_TIME_TO_LIVE = 4*7*24*60*60;
+
 
 		/**
 		 * Parameter value for Header content-type.
