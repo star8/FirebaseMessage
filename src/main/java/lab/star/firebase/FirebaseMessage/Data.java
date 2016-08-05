@@ -17,7 +17,6 @@ package lab.star.firebase.FirebaseMessage;
  */
 
 import java.util.HashMap;
-import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
@@ -29,7 +28,7 @@ public class Data {
 	private HashMap<String, Object> map;
 	private static Data instance = null;
 
-	private Data() {
+	public Data() {
 		map = new HashMap<String, Object>();
 	}
 
@@ -41,26 +40,12 @@ public class Data {
 		return instance;
 	}
 
-	HashMap<String, Object> getData() {
-		return this.map;
-
-	}
-
-	public Data data(HashMap<String, Object> map) {
-		Set<String> keys = map.keySet();
-		for (String key : keys) {
-			this.map.put(key, map.get(key));
-		}
+	public Data set(HashMap<String, Object> map) {
+		this.map = map;
 		return this;
 	}
 
-	public Data data(String key, String value) {
-		if (!map.containsKey(key))
-			map.put(key, value);
-		return this;
-	}
-
-	public Data data(String json) {
+	public Data set(String json) {
 		// copy data from json to map
 		return this;
 	}
@@ -73,6 +58,11 @@ public class Data {
 	public Data remove(String key) {
 		map.remove(key);
 		return this;
+	}
+
+	HashMap<String, Object> getData() {
+		return this.map;
+
 	}
 
 }
