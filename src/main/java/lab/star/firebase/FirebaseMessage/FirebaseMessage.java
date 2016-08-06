@@ -17,6 +17,8 @@ package lab.star.firebase.FirebaseMessage;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -61,6 +63,7 @@ public class FirebaseMessage {
 	private boolean collapsible;
 	private boolean delayWhileIdeal;
 	private int connTimeOut;
+	private Set<String> regIds;
 
 	private FirebaseMessage() {
 		super();
@@ -73,6 +76,11 @@ public class FirebaseMessage {
 
 	public FirebaseMessage to(String to) {
 		this.userId = to;
+		return this;
+	}
+	
+	public FirebaseMessage to(Set<String> regIds) {
+		this.regIds = regIds;
 		return this;
 	}
 
@@ -129,10 +137,13 @@ public class FirebaseMessage {
 			object.putPOJO(Constants.JSON_NOTIFICATION, notification);
 		if (data != null)
 			object.putPOJO(Constants.JSON_PAYLOAD, data.getData());
+		if(userId!=null && !userId.isEmpty())
 		object.put(Constants.PARAM_TO, userId);
 		object.put(Constants.PARAM_PRIORITY, priority.toString());
 		object.put(Constants.PARAM_TIME_TO_LIVE, ttl);
 		object.put(Constants.PARAM_DELAY_WHILE_IDLE, delayWhileIdeal);
+		if(regIds!=null && !regIds.isEmpty())
+			object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
 		if (collapsible)
 			object.put(Constants.PARAM_COLLAPSE_KEY, Constants.COLLAPSE_KEY);
 		return object;
@@ -144,7 +155,7 @@ public class FirebaseMessage {
 	 * @param notification
 	 */
 
-	public HttpResponse send() {
+	public HttpResponse send() throws IOException, ClientProtocolException{
 
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpPost post = new HttpPost(Constants.FCM_SEND_ENDPOINT);
@@ -163,22 +174,18 @@ public class FirebaseMessage {
 		try {
 			jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(getPayload());
 		} catch (JsonProcessingException e) {
-			e.printStackTrace();
+			throw new IllegalStateException(e.getMessage(), e);
 		}
-		// System.out.println(jsonBody);
+//		 System.out.println(jsonBody);
 		post.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
 
 		HttpResponse response = null;
-		try {
 			response = client.execute(post);
-		} catch (ClientProtocolException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		
 		return response;
 
 	}
+	
 
 	/**
 	 * Asynchronous message sending options
@@ -211,135 +218,127 @@ public class FirebaseMessage {
 		}
 
 		public DelivaryNotification call() throws Exception {
-			// use regular http code here and do not catch exception
 			HttpClient client = HttpClientBuilder.create().build();
 			HttpPost post = new HttpPost(Constants.FCM_SEND_ENDPOINT);
-			if(connTimeOut==0)
-				message.connTimeOut=Constants.DEFAUTL_CONNECTION_TIMEOUT;
-			
-			RequestConfig config = RequestConfig.custom()
-				    .setConnectionRequestTimeout(connTimeOut*1000)
-				    .setConnectTimeout(connTimeOut*1000)
-				    .setSocketTimeout(connTimeOut*1000)
-				    .build();
+			if (connTimeOut == 0)
+				message.connTimeOut = Constants.DEFAUTL_CONNECTION_TIMEOUT;
+
+			RequestConfig config =
+					RequestConfig.custom().setConnectionRequestTimeout(connTimeOut * 1000).setConnectTimeout(connTimeOut * 1000)
+							.setSocketTimeout(connTimeOut * 1000).build();
 			post.setConfig(config);
 			post.setHeader(Constants.PARAM_HEADER_SERVER_KEY, registrationToken);
-			post.setHeader(Constants.PARAM_HEADER_CONTENT_TYPE, Constants.HEADER_CONTENT_TYPE_JSON );
-			
-			
-			String jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(getPayload());
-			
-			System.out.println(jsonBody);
+			post.setHeader(Constants.PARAM_HEADER_CONTENT_TYPE, Constants.HEADER_CONTENT_TYPE_JSON);
+
+
+			String jsonBody = "";
+			try {
+				jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(getPayload());
+			} catch (JsonProcessingException e) {
+				throw new IllegalStateException(e.getMessage(), e);
+			}
+//			 System.out.println(jsonBody);
 			post.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
+
+			HttpResponse response = null;
+				response = client.execute(post);
 			
-			HttpResponse response = client.execute(post);
-			
-			BufferedReader rd = new BufferedReader(
-			        new InputStreamReader(response.getEntity().getContent()));;
-			 
-			StringBuffer result = new StringBuffer();
-			String line = "";
-				while ((line = rd.readLine()) != null) {
-					result.append(line);
-				}
-			
-			System.out.println(result);
 			return null;
 		}
 
 	}
 
-	private final class Constants {
+	private interface Constants {
 
 		/**
 		 * Endpoint for sending messages.
 		 */
-		private static final String FCM_SEND_ENDPOINT = "https://fcm.googleapis.com/fcm/send";
+		public static final String FCM_SEND_ENDPOINT = "https://fcm.googleapis.com/fcm/send";
 
 		/**
 		 * User defined collapse-key for collapse parameter. Maximum 4 keys allowed for single
 		 * device to use collapse.
 		 */
-		private static final String COLLAPSE_KEY = "collapse_key";
+		public static final String COLLAPSE_KEY = "collapse_key";
 
 
 		/**
 		 * Parameter for Header content-type.
 		 */
 
-		private static final String PARAM_HEADER_CONTENT_TYPE = "Content-Type";
+		public static final String PARAM_HEADER_CONTENT_TYPE = "Content-Type";
 
 		/**
 		 * value for default connection time-Out.
 		 */
 
-		private static final int DEFAUTL_CONNECTION_TIMEOUT = 10;
+		public static final int DEFAUTL_CONNECTION_TIMEOUT = 10;
 		
 		/**
 		 * value for default connection time-Out.
 		 */
 
-		private static final int DEFAUTL_TIME_TO_LIVE = 4*7*24*60*60;
+		public static final int DEFAUTL_TIME_TO_LIVE = 4*7*24*60*60;
 
 
 		/**
 		 * Parameter value for Header content-type.
 		 */
 
-		private static final String HEADER_CONTENT_TYPE_JSON = "application/json";
+		public static final String HEADER_CONTENT_TYPE_JSON = "application/json";
 
 		/**
 		 * Parameter for Header authorization server-key.
 		 */
 
-		private static final String PARAM_HEADER_SERVER_KEY = "Authorization";
+		public static final String PARAM_HEADER_SERVER_KEY = "Authorization";
 
 		/**
 		 * Parameter for to field.
 		 */
 
-		private static final String PARAM_TO = "to";
+		public static final String PARAM_TO = "to";
 
 		/**
 		 * Prefix of the topic.
 		 */
-		private static final String PARAM_REGISTRATION_IDS = "registration_ids";
+		public static final String PARAM_REGISTRATION_IDS = "registration_ids";
 
 		/**
 		 * HTTP parameter for collapse key.
 		 */
-		private static final String PARAM_COLLAPSE_KEY = "collapse_key";
+		public static final String PARAM_COLLAPSE_KEY = "collapse_key";
 
 		/**
 		 * HTTP parameter for delaying the message delivery if the device is idle.
 		 */
-		private static final String PARAM_DELAY_WHILE_IDLE = "delay_while_idle";
+		public static final String PARAM_DELAY_WHILE_IDLE = "delay_while_idle";
 
 		/**
 		 * HTTP parameter for telling gcm to validate the message without actually sending it.
 		 */
-		private static final String PARAM_DRY_RUN = "dry_run";
+		public static final String PARAM_DRY_RUN = "dry_run";
 
 		/**
 		 * HTTP parameter for package name that can be used to restrict message delivery by matching
 		 * against the package name used to generate the registration id.
 		 */
-		private static final String PARAM_RESTRICTED_PACKAGE_NAME = "restricted_package_name";
+		public static final String PARAM_RESTRICTED_PACKAGE_NAME = "restricted_package_name";
 
 		/**
 		 * Parameter used to set the message time-to-live.
 		 */
-		private static final String PARAM_TIME_TO_LIVE = "time_to_live";
+		public static final String PARAM_TIME_TO_LIVE = "time_to_live";
 
 		/**
 		 * Parameter used to set the message priority.
 		 */
-		private static final String PARAM_PRIORITY = "priority";
+		public static final String PARAM_PRIORITY = "priority";
 
 		/**
 		 * Parameter used to set the content available (iOS only)
 		 */
-		private static final String PARAM_CONTENT_AVAILABLE = "content_available";
+		public static final String PARAM_CONTENT_AVAILABLE = "content_available";
 
 		/**
 		 * JSON-only field representing the payload data.
