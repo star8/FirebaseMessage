@@ -20,12 +20,16 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
@@ -120,7 +124,7 @@ public class FirebaseMessage {
 		return this;
 	}
 
-	public FirebaseMessage timeToLive(int ttl) {
+	public FirebaseMessage ttl(int ttl) {
 		this.ttl = ttl;
 		return this;
 	}
@@ -130,7 +134,7 @@ public class FirebaseMessage {
 		return this;
 	}
 
-	public ObjectNode getPayload() {
+	private ObjectNode getPayload() {
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode object = mapper.createObjectNode();
 		if (notification != null)
@@ -148,6 +152,17 @@ public class FirebaseMessage {
 			object.put(Constants.PARAM_COLLAPSE_KEY, Constants.COLLAPSE_KEY);
 		return object;
 	}
+	private void checkInput(){
+		if (userId==null || (userId!=null && userId.isEmpty())) 
+			throw new IllegalArgumentException("Invalid Input");
+		if (notification==null && data==null)
+			throw new IllegalArgumentException("Invalid Input");
+		if (regIds==null || (regIds!=null && regIds.isEmpty())) 
+			throw new IllegalArgumentException("Invalid Input");
+		if (notification!=null){
+			notification.checkInput();
+		}
+	}
 
 	/**
 	 * Synchronous message sending options
@@ -155,35 +170,39 @@ public class FirebaseMessage {
 	 * @param notification
 	 */
 
-	public HttpResponse send() throws IOException, ClientProtocolException{
-
+	public HttpResponse send(){
+		return doNetworkOp(this);
+	}
+	private HttpResponse doNetworkOp(FirebaseMessage message){
+		checkInput();
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpPost post = new HttpPost(Constants.FCM_SEND_ENDPOINT);
-		if (connTimeOut == 0)
-			this.connTimeOut = Constants.DEFAUTL_CONNECTION_TIMEOUT;
-
+		this.connTimeOut =connTimeOut == 0? Constants.DEFAUTL_CONNECTION_TIMEOUT:connTimeOut;
 		RequestConfig config =
-				RequestConfig.custom().setConnectionRequestTimeout(connTimeOut * 1000).setConnectTimeout(connTimeOut * 1000)
-						.setSocketTimeout(connTimeOut * 1000).build();
+				RequestConfig.custom().setConnectionRequestTimeout(connTimeOut).setConnectTimeout(connTimeOut)
+						.setSocketTimeout(connTimeOut ).build();
 		post.setConfig(config);
 		post.setHeader(Constants.PARAM_HEADER_SERVER_KEY, registrationToken);
 		post.setHeader(Constants.PARAM_HEADER_CONTENT_TYPE, Constants.HEADER_CONTENT_TYPE_JSON);
-
-
-		String jsonBody = "";
+		String jsonBody=null;
 		try {
 			jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(getPayload());
-		} catch (JsonProcessingException e) {
-			throw new IllegalStateException(e.getMessage(), e);
+		} catch (JsonProcessingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
 		}
-//		 System.out.println(jsonBody);
 		post.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
-
-		HttpResponse response = null;
-			response = client.execute(post);
-		
+		HttpResponse response=null;
+		try {
+			response=client.execute(post);
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}finally{
+			post.releaseConnection();
+		}
 		return response;
-
 	}
 	
 
@@ -197,53 +216,41 @@ public class FirebaseMessage {
 			throw new IllegalArgumentException("Invalid Parameter");
 		ExecutorService executor = Executors.newFixedThreadPool(1);
 		AsyncNetworkTask task = new AsyncNetworkTask(this);
-		Future<DelivaryNotification> response = executor.submit(task);
-		DelivaryNotification result = null;
+		Future<HttpResponse> response=null;
+		try {
+			response = executor.submit(task);
+		} catch (RejectedExecutionException|NullPointerException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		HttpResponse result = null;
 		try {
 			result = response.get(10, TimeUnit.SECONDS);
-		} catch (Exception e) {
-			notification.onFailed(e, this);
+		} catch (InterruptedException |ExecutionException|TimeoutException e) {
+			e.printStackTrace();
 		}
-		executor.shutdown();
-		if (result != null) {
+		try{
+			executor.shutdown();
+		}catch (SecurityException e) {
+			e.printStackTrace();
+		}
+		
+		if (result != null && result.getStatusLine().getStatusCode()==HttpStatus.SC_OK) {
 			notification.onSuccess(this);
+		}else{
+			notification.onFailed(result, this);
 		}
 	}
 
-	class AsyncNetworkTask implements Callable<DelivaryNotification> {
+	class AsyncNetworkTask implements Callable<HttpResponse> {
 		final FirebaseMessage message;
 
 		AsyncNetworkTask(FirebaseMessage message) {
 			this.message = message;
 		}
 
-		public DelivaryNotification call() throws Exception {
-			HttpClient client = HttpClientBuilder.create().build();
-			HttpPost post = new HttpPost(Constants.FCM_SEND_ENDPOINT);
-			if (connTimeOut == 0)
-				message.connTimeOut = Constants.DEFAUTL_CONNECTION_TIMEOUT;
-
-			RequestConfig config =
-					RequestConfig.custom().setConnectionRequestTimeout(connTimeOut * 1000).setConnectTimeout(connTimeOut * 1000)
-							.setSocketTimeout(connTimeOut * 1000).build();
-			post.setConfig(config);
-			post.setHeader(Constants.PARAM_HEADER_SERVER_KEY, registrationToken);
-			post.setHeader(Constants.PARAM_HEADER_CONTENT_TYPE, Constants.HEADER_CONTENT_TYPE_JSON);
-
-
-			String jsonBody = "";
-			try {
-				jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(getPayload());
-			} catch (JsonProcessingException e) {
-				throw new IllegalStateException(e.getMessage(), e);
-			}
-//			 System.out.println(jsonBody);
-			post.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
-
-			HttpResponse response = null;
-				response = client.execute(post);
-			
-			return null;
+		public HttpResponse call(){
+			return doNetworkOp(message);
 		}
 
 	}
@@ -272,7 +279,7 @@ public class FirebaseMessage {
 		 * value for default connection time-Out.
 		 */
 
-		public static final int DEFAUTL_CONNECTION_TIMEOUT = 10;
+		public static final int DEFAUTL_CONNECTION_TIMEOUT = 10*1000;
 		
 		/**
 		 * value for default connection time-Out.

@@ -6,6 +6,23 @@ A Java library to help you send downstream message to a client.
 
 ## Sample usage
 
+To send message synchronously
+
+1) send notification
+```shell
+FirebaseMessage.intialize("YOUR_SERVER_KEY").to("user_registration_token").notification(Notification.body("MSG_BODY").title("MSG_TITLE").send();
+```
+
+2) Send message  
+```shell
+FirebaseMessage.intialize("YOUR_SERVER_KEY").to("user_registration_token").data(Data.add("KEY1", "VALUE1").add("KEY2", "VALUE2")).send();
+```
+
+3) Send message & notification
+```shell
+FirebaseMessage.intialize("YOUR_SERVER_KEY").to("user_registration_token").data(Data.add("KEY1", "VALUE1").priority(Priority.NORMAL).notification(Notification.body("BODY").title("YOUR_TITLE").icon("Notification icon")).send();
+```
+
 ## License
 
   Copyright (C) 2016 Star labs.

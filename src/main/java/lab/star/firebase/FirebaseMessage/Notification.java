@@ -47,5 +47,12 @@ public class Notification {
 		this.icon=icon;
 		return this;
 	}
+	
+	void checkInput(){
+		if (body==null || (body!=null && body.isEmpty())) 
+			throw new IllegalArgumentException("Invalid Input");
+		if (title==null || (title!=null && title.isEmpty())) 
+			throw new IllegalArgumentException("Invalid Input");
+	}
 
 }
