@@ -142,13 +142,16 @@ public class FirebaseMessage {
 			object.putPOJO(Constants.JSON_NOTIFICATION, notification);
 		if (data != null)
 			object.putPOJO(Constants.JSON_PAYLOAD, data.getData());
-		if(regIds!=null && regIds.size()==1)
-		object.put(Constants.PARAM_TO, regIds.iterator().next());
 		object.put(Constants.PARAM_PRIORITY, priority.toString());
 		object.put(Constants.PARAM_TIME_TO_LIVE, ttl);
 		object.put(Constants.PARAM_DELAY_WHILE_IDLE, delayWhileIdeal);
-		if(regIds!=null && regIds.size()>1)
-			object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
+		if (regIds != null) {
+			if (regIds.size() == 1) {
+				object.put(Constants.PARAM_TO, regIds.iterator().next());
+			} else if (regIds.size() > 1) {
+				object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
+			}
+		}
 		if (collapsible)
 			object.put(Constants.PARAM_COLLAPSE_KEY, Constants.COLLAPSE_KEY);
 		return object;
