@@ -1,23 +1,6 @@
 package lab.star.firebase.FirebaseMessage;
 
-/*
- * Copyright (C) 2016 Star labs.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- * 
- * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- */
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -67,31 +50,90 @@ public class FirebaseMessage {
 	private boolean collapsible;
 	private boolean delayWhileIdeal;
 	private int connTimeOut;
+	private String projectId;
 	private Set<String> regIds;
+	private String keyName;
+	private String notificationKey;
 
 	private FirebaseMessage() {
 		super();
-		this.priority=Priority.NORMAL;
-		this.ttl=Constants.DEFAUTL_TIME_TO_LIVE;
-		this.collapsible=false;
-		this.delayWhileIdeal=false;
-		this.connTimeOut= Constants.DEFAUTL_CONNECTION_TIMEOUT;
+		this.priority = Priority.NORMAL;
+		this.ttl = Constants.DEFAUTL_TIME_TO_LIVE;
+		this.collapsible = false;
+		this.delayWhileIdeal = false;
+		this.connTimeOut = Constants.DEFAUTL_CONNECTION_TIMEOUT;
 	}
 
 	public FirebaseMessage to(String to) {
 		this.userId = to;
 		return this;
 	}
-	
+
 	public FirebaseMessage to(Set<String> regIds) {
 		this.regIds = regIds;
 		return this;
 	}
 
-	public static FirebaseMessage intialize(String registration_token) {
+	public static FirebaseMessage with(String registration_token) {
 		FirebaseMessage firebaseMessage = new FirebaseMessage();
 		firebaseMessage.registrationToken = "key=" + registration_token;
 		return firebaseMessage;
+	}
+
+	public FirebaseMessage project(String sender) {
+		this.projectId = sender;
+		return this;
+	}
+
+	public FirebaseMessage instanceIds(Set<String> sets) {
+		this.regIds = sets;
+		return this;
+	}
+
+	public FirebaseMessage notificationKey(String key) {
+		this.notificationKey = key;
+		return this;
+	}
+
+	public FirebaseMessage notificationKeyName(String key_name) {
+		this.keyName = key_name;
+		return this;
+	}
+
+	private void checkInputForDeviceGroupMessage() {
+		if (this.registrationToken == null
+				|| (this.registrationToken != null && this.registrationToken.length() == 0)) {
+			throw new IllegalArgumentException("Invalid Input");
+		}
+		if (this.projectId == null || (this.projectId != null && this.projectId.length() == 0)) {
+			throw new IllegalArgumentException("Invalid Input");
+		}
+		if (this.regIds == null || (this.projectId != null && this.regIds.size() == 0)) {
+			throw new IllegalArgumentException("Invalid Input");
+		}
+	}
+
+	public String createDeviceGroup() {
+		checkInputForDeviceGroupMessage();
+		// write up your network code here
+		return "REGISTRATION_ID";
+	}
+
+	public String addDeviceGroup() {
+		checkInputForDeviceGroupMessage();
+		if (this.notificationKey == null || (this.notificationKey != null && this.notificationKey.length() == 0)) {
+			throw new IllegalArgumentException("Invalid Input");
+		}
+		if (this.keyName == null || (this.keyName != null && this.keyName.length() == 0)) {
+			throw new IllegalArgumentException("Invalid Input");
+		}
+		// write up your network code here
+		return "REGISTRATION_ID";
+	}
+
+	public void removeDeviceGroup() {
+		checkInputForDeviceGroupMessage();
+		// write up your network code here
 	}
 
 	public FirebaseMessage connTimeOut(int connTimeOut) {
@@ -141,25 +183,26 @@ public class FirebaseMessage {
 			object.putPOJO(Constants.JSON_NOTIFICATION, notification);
 		if (data != null)
 			object.putPOJO(Constants.JSON_PAYLOAD, data.getData());
-		if(userId!=null && !userId.isEmpty())
-		object.put(Constants.PARAM_TO, userId);
+		if (userId != null && !userId.isEmpty())
+			object.put(Constants.PARAM_TO, userId);
 		object.put(Constants.PARAM_PRIORITY, priority.toString());
 		object.put(Constants.PARAM_TIME_TO_LIVE, ttl);
 		object.put(Constants.PARAM_DELAY_WHILE_IDLE, delayWhileIdeal);
-		if(regIds!=null && !regIds.isEmpty())
+		if (regIds != null && !regIds.isEmpty())
 			object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
 		if (collapsible)
 			object.put(Constants.PARAM_COLLAPSE_KEY, Constants.COLLAPSE_KEY);
 		return object;
 	}
-	private void checkInput(){
-		if (userId==null || (userId!=null && userId.isEmpty())) 
+
+	private void checkInput() {
+		if (userId == null || (userId != null && userId.isEmpty()))
 			throw new IllegalArgumentException("Invalid Input");
-		if (notification==null && data==null)
+		if (notification == null && data == null)
 			throw new IllegalArgumentException("Invalid Input");
-		if (regIds==null || (regIds!=null && regIds.isEmpty())) 
+		if (regIds == null || (regIds != null && regIds.isEmpty()))
 			throw new IllegalArgumentException("Invalid Input");
-		if (notification!=null){
+		if (notification != null) {
 			notification.checkInput();
 		}
 	}
@@ -170,21 +213,21 @@ public class FirebaseMessage {
 	 * @param notification
 	 */
 
-	public HttpResponse send(){
+	public HttpResponse send() {
 		return doNetworkOp(this);
 	}
-	private HttpResponse doNetworkOp(FirebaseMessage message){
+
+	private HttpResponse doNetworkOp(FirebaseMessage message) {
 		checkInput();
 		HttpClient client = HttpClientBuilder.create().build();
 		HttpPost post = new HttpPost(Constants.FCM_SEND_ENDPOINT);
-		this.connTimeOut =connTimeOut == 0? Constants.DEFAUTL_CONNECTION_TIMEOUT:connTimeOut;
-		RequestConfig config =
-				RequestConfig.custom().setConnectionRequestTimeout(connTimeOut).setConnectTimeout(connTimeOut)
-						.setSocketTimeout(connTimeOut ).build();
+		this.connTimeOut = connTimeOut == 0 ? Constants.DEFAUTL_CONNECTION_TIMEOUT : connTimeOut;
+		RequestConfig config = RequestConfig.custom().setConnectionRequestTimeout(connTimeOut)
+				.setConnectTimeout(connTimeOut).setSocketTimeout(connTimeOut).build();
 		post.setConfig(config);
 		post.setHeader(Constants.PARAM_HEADER_SERVER_KEY, registrationToken);
 		post.setHeader(Constants.PARAM_HEADER_CONTENT_TYPE, Constants.HEADER_CONTENT_TYPE_JSON);
-		String jsonBody=null;
+		String jsonBody = null;
 		try {
 			jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(getPayload());
 		} catch (JsonProcessingException e1) {
@@ -192,19 +235,18 @@ public class FirebaseMessage {
 			e1.printStackTrace();
 		}
 		post.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
-		HttpResponse response=null;
+		HttpResponse response = null;
 		try {
-			response=client.execute(post);
+			response = client.execute(post);
 		} catch (ClientProtocolException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}finally{
+		} finally {
 			post.releaseConnection();
 		}
 		return response;
 	}
-	
 
 	/**
 	 * Asynchronous message sending options
@@ -216,28 +258,28 @@ public class FirebaseMessage {
 			throw new IllegalArgumentException("Invalid Parameter");
 		ExecutorService executor = Executors.newFixedThreadPool(1);
 		AsyncNetworkTask task = new AsyncNetworkTask(this);
-		Future<HttpResponse> response=null;
+		Future<HttpResponse> response = null;
 		try {
 			response = executor.submit(task);
-		} catch (RejectedExecutionException|NullPointerException e1) {
+		} catch (RejectedExecutionException | NullPointerException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		HttpResponse result = null;
 		try {
 			result = response.get(10, TimeUnit.SECONDS);
-		} catch (InterruptedException |ExecutionException|TimeoutException e) {
+		} catch (InterruptedException | ExecutionException | TimeoutException e) {
 			e.printStackTrace();
 		}
-		try{
+		try {
 			executor.shutdown();
-		}catch (SecurityException e) {
+		} catch (SecurityException e) {
 			e.printStackTrace();
 		}
-		
-		if (result != null && result.getStatusLine().getStatusCode()==HttpStatus.SC_OK) {
+
+		if (result != null && result.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 			notification.onSuccess(this);
-		}else{
+		} else {
 			notification.onFailed(result, this);
 		}
 	}
@@ -249,7 +291,7 @@ public class FirebaseMessage {
 			this.message = message;
 		}
 
-		public HttpResponse call(){
+		public HttpResponse call() {
 			return doNetworkOp(message);
 		}
 
@@ -263,11 +305,10 @@ public class FirebaseMessage {
 		public static final String FCM_SEND_ENDPOINT = "https://fcm.googleapis.com/fcm/send";
 
 		/**
-		 * User defined collapse-key for collapse parameter. Maximum 4 keys allowed for single
-		 * device to use collapse.
+		 * User defined collapse-key for collapse parameter. Maximum 4 keys
+		 * allowed for single device to use collapse.
 		 */
 		public static final String COLLAPSE_KEY = "collapse_key";
-
 
 		/**
 		 * Parameter for Header content-type.
@@ -279,14 +320,13 @@ public class FirebaseMessage {
 		 * value for default connection time-Out.
 		 */
 
-		public static final int DEFAUTL_CONNECTION_TIMEOUT = 10*1000;
-		
+		public static final int DEFAUTL_CONNECTION_TIMEOUT = 10 * 1000;
+
 		/**
 		 * value for default connection time-Out.
 		 */
 
-		public static final int DEFAUTL_TIME_TO_LIVE = 4*7*24*60*60;
-
+		public static final int DEFAUTL_TIME_TO_LIVE = 4 * 7 * 24 * 60 * 60;
 
 		/**
 		 * Parameter value for Header content-type.
@@ -317,18 +357,21 @@ public class FirebaseMessage {
 		public static final String PARAM_COLLAPSE_KEY = "collapse_key";
 
 		/**
-		 * HTTP parameter for delaying the message delivery if the device is idle.
+		 * HTTP parameter for delaying the message delivery if the device is
+		 * idle.
 		 */
 		public static final String PARAM_DELAY_WHILE_IDLE = "delay_while_idle";
 
 		/**
-		 * HTTP parameter for telling gcm to validate the message without actually sending it.
+		 * HTTP parameter for telling gcm to validate the message without
+		 * actually sending it.
 		 */
 		public static final String PARAM_DRY_RUN = "dry_run";
 
 		/**
-		 * HTTP parameter for package name that can be used to restrict message delivery by matching
-		 * against the package name used to generate the registration id.
+		 * HTTP parameter for package name that can be used to restrict message
+		 * delivery by matching against the package name used to generate the
+		 * registration id.
 		 */
 		public static final String PARAM_RESTRICTED_PACKAGE_NAME = "restricted_package_name";
 
@@ -360,12 +403,14 @@ public class FirebaseMessage {
 		public static final String ERROR_QUOTA_EXCEEDED = "QuotaExceeded";
 
 		/**
-		 * Too many messages sent by the sender to a specific device. Retry after a while.
+		 * Too many messages sent by the sender to a specific device. Retry
+		 * after a while.
 		 */
 		public static final String ERROR_DEVICE_QUOTA_EXCEEDED = "DeviceQuotaExceeded";
 
 		/**
-		 * Missing registration_id. Sender should always add the registration_id to the request.
+		 * Missing registration_id. Sender should always add the registration_id
+		 * to the request.
 		 */
 		public static final String ERROR_MISSING_REGISTRATION = "MissingRegistration";
 
