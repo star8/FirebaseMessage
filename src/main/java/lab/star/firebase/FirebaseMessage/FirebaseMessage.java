@@ -1,6 +1,7 @@
 package lab.star.firebase.FirebaseMessage;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -26,7 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class FirebaseMessage {
-	enum Priority {
+	public enum Priority {
 		NORMAL("normal"), HIGH("high");
 		private final String value;
 
@@ -41,7 +42,6 @@ public class FirebaseMessage {
 		}
 	}
 
-	private String userId;
 	private String registrationToken;
 	private Data data;
 	private Notification notification;
@@ -50,8 +50,8 @@ public class FirebaseMessage {
 	private boolean collapsible;
 	private boolean delayWhileIdeal;
 	private int connTimeOut;
-	private String projectId;
 	private Set<String> regIds;
+	private String projectId;
 	private String keyName;
 	private String notificationKey;
 
@@ -65,7 +65,8 @@ public class FirebaseMessage {
 	}
 
 	public FirebaseMessage to(String to) {
-		this.userId = to;
+		this.regIds = new HashSet<String>();
+		regIds.add(to);
 		return this;
 	}
 
@@ -74,66 +75,10 @@ public class FirebaseMessage {
 		return this;
 	}
 
-	public static FirebaseMessage with(String registration_token) {
+	public static FirebaseMessage intialize(String registration_token) {
 		FirebaseMessage firebaseMessage = new FirebaseMessage();
 		firebaseMessage.registrationToken = "key=" + registration_token;
 		return firebaseMessage;
-	}
-
-	public FirebaseMessage project(String sender) {
-		this.projectId = sender;
-		return this;
-	}
-
-	public FirebaseMessage instanceIds(Set<String> sets) {
-		this.regIds = sets;
-		return this;
-	}
-
-	public FirebaseMessage notificationKey(String key) {
-		this.notificationKey = key;
-		return this;
-	}
-
-	public FirebaseMessage notificationKeyName(String key_name) {
-		this.keyName = key_name;
-		return this;
-	}
-
-	private void checkInputForDeviceGroupMessage() {
-		if (this.registrationToken == null
-				|| (this.registrationToken != null && this.registrationToken.length() == 0)) {
-			throw new IllegalArgumentException("Invalid Input");
-		}
-		if (this.projectId == null || (this.projectId != null && this.projectId.length() == 0)) {
-			throw new IllegalArgumentException("Invalid Input");
-		}
-		if (this.regIds == null || (this.projectId != null && this.regIds.size() == 0)) {
-			throw new IllegalArgumentException("Invalid Input");
-		}
-	}
-
-	public String createDeviceGroup() {
-		checkInputForDeviceGroupMessage();
-		// write up your network code here
-		return "REGISTRATION_ID";
-	}
-
-	public String addDeviceGroup() {
-		checkInputForDeviceGroupMessage();
-		if (this.notificationKey == null || (this.notificationKey != null && this.notificationKey.length() == 0)) {
-			throw new IllegalArgumentException("Invalid Input");
-		}
-		if (this.keyName == null || (this.keyName != null && this.keyName.length() == 0)) {
-			throw new IllegalArgumentException("Invalid Input");
-		}
-		// write up your network code here
-		return "REGISTRATION_ID";
-	}
-
-	public void removeDeviceGroup() {
-		checkInputForDeviceGroupMessage();
-		// write up your network code here
 	}
 
 	public FirebaseMessage connTimeOut(int connTimeOut) {
@@ -183,21 +128,22 @@ public class FirebaseMessage {
 			object.putPOJO(Constants.JSON_NOTIFICATION, notification);
 		if (data != null)
 			object.putPOJO(Constants.JSON_PAYLOAD, data.getData());
-		if (userId != null && !userId.isEmpty())
-			object.put(Constants.PARAM_TO, userId);
 		object.put(Constants.PARAM_PRIORITY, priority.toString());
 		object.put(Constants.PARAM_TIME_TO_LIVE, ttl);
 		object.put(Constants.PARAM_DELAY_WHILE_IDLE, delayWhileIdeal);
-		if (regIds != null && !regIds.isEmpty())
-			object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
+		if (regIds != null) {
+			if (regIds.size() == 1) {
+				object.put(Constants.PARAM_TO, regIds.iterator().next());
+			} else if (regIds.size() > 1) {
+				object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
+			}
+		}
 		if (collapsible)
 			object.put(Constants.PARAM_COLLAPSE_KEY, Constants.COLLAPSE_KEY);
 		return object;
 	}
 
 	private void checkInput() {
-		if (userId == null || (userId != null && userId.isEmpty()))
-			throw new IllegalArgumentException("Invalid Input");
 		if (notification == null && data == null)
 			throw new IllegalArgumentException("Invalid Input");
 		if (regIds == null || (regIds != null && regIds.isEmpty()))
@@ -295,6 +241,62 @@ public class FirebaseMessage {
 			return doNetworkOp(message);
 		}
 
+	}
+
+	public FirebaseMessage project(String sender) {
+		this.projectId = sender;
+		return this;
+	}
+
+	public FirebaseMessage instanceIds(Set<String> sets) {
+		this.regIds = sets;
+		return this;
+	}
+
+	public FirebaseMessage notificationKey(String key) {
+		this.notificationKey = key;
+		return this;
+	}
+
+	public FirebaseMessage notificationKeyName(String key_name) {
+		this.keyName = key_name;
+		return this;
+	}
+
+	private void checkInputForDeviceGroupMessage() {
+		if (this.registrationToken == null
+				|| (this.registrationToken != null && this.registrationToken.length() == 0)) {
+			throw new IllegalArgumentException("Invalid Input");
+		}
+		if (this.projectId == null || (this.projectId != null && this.projectId.length() == 0)) {
+			throw new IllegalArgumentException("Invalid Input");
+		}
+		if (this.regIds == null || (this.projectId != null && this.regIds.size() == 0)) {
+			throw new IllegalArgumentException("Invalid Input");
+		}
+	}
+
+	public String createDeviceGroup() {
+		checkInputForDeviceGroupMessage();
+		// write up your network code here
+		return "REGISTRATION_ID";
+	}
+
+	public String addDeviceGroup() {
+		checkInputForDeviceGroupMessage();
+		if (this.notificationKey == null || (this.notificationKey != null && this.notificationKey.length() == 0)) {
+			throw new IllegalArgumentException("Invalid Input");
+		}
+		if (this.keyName == null || (this.keyName != null && this.keyName.length() == 0)) {
+			throw new IllegalArgumentException("Invalid Input");
+		}
+		// write up your network code here
+		return "REGISTRATION_ID";
+	}
+
+	public void removeDeviceGroup() {
+		checkInputForDeviceGroupMessage();
+		// write up your network code here
 	}
 
 	private interface Constants {
