@@ -17,7 +17,8 @@ package lab.star.firebase.FirebaseMessage;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -38,6 +39,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,6 +51,21 @@ public class FirebaseMessage {
 		private final String value;
 
 		Priority(String value) {
+			this.value = value;
+		}
+
+		@Override
+		public String toString() {
+			// TODO Auto-generated method stub
+			return this.value;
+		}
+	}
+
+	public enum DeviceGroupOperation {
+		CREATE("create"), ADD("add"), REMOVE("remove");
+		private final String value;
+
+		DeviceGroupOperation(String value) {
 			this.value = value;
 		}
 
@@ -134,7 +151,78 @@ public class FirebaseMessage {
 		this.delayWhileIdeal = delayWhileIdeal;
 		return this;
 	}
+	
+	public String createDeviceGroup(String projectId, String notificationKeyName, Set<String> regIds)
+	        throws IOException {
 
+	    // HTTP request
+	    ObjectMapper mapper = new ObjectMapper();
+		ObjectNode object = mapper.createObjectNode();
+	    object.put(Constants.JSON_OPERATION_KEY, Constants.DEVICE_GROUP_CREATE);
+	    object.put(Constants.JSON_NOTIFICATION_KEY_NAME, notificationKeyName);
+	    object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
+	    
+		String jsonBody=null;
+		try {
+			jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(object);
+		} catch (JsonProcessingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+	    HttpResponse response=makeHttpPostWithJSONRequest(Constants.FCM_GROUP_ENDPOINT, jsonBody, projectId);
+		BufferedReader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+		String json = reader.readLine();
+		JSONObject jObject = new JSONObject(json);
+
+
+	}
+
+	public static HttpResponse makeHttpPostWithJSONRequest(String path, String json, String projectId) {
+		try {
+			HttpPost httpPost = new HttpPost(path);
+			httpPost.setEntity(new StringEntity(json));
+			httpPost.setHeader("Accept", "application/json");
+			httpPost.setHeader("Content-type", "application/json");
+			httpPost.setHeader("project_id", projectId);
+			return HttpClientBuilder.create().build().execute(httpPost);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	public static ObjectNode getPayloadForGroupCreate(String notificationKeyName, Set<String> regIds) {
+	    ObjectMapper mapper = new ObjectMapper();
+		ObjectNode object = mapper.createObjectNode();
+	    object.put(Constants.JSON_OPERATION_KEY, Constants.DEVICE_GROUP_CREATE);
+	    object.put(Constants.JSON_NOTIFICATION_KEY_NAME, notificationKeyName);
+	    object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
+	    return object;
+	}
+	
+	public static ObjectNode getPayloadForGroupAdd(String notificationKey, Set<String> regIds) {
+	    ObjectMapper mapper = new ObjectMapper();
+		ObjectNode object = mapper.createObjectNode();
+	    object.put(Constants.JSON_OPERATION_KEY, Constants.DEVICE_GROUP_ADD);
+	    object.put(Constants.JSON_NOTIFICATION_KEY, notificationKey);
+	    object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
+	    return object;
+	}
+	
+	public static ObjectNode getPayloadForGroupRemove(String notificationKey, Set<String> regIds) {
+	    ObjectMapper mapper = new ObjectMapper();
+		ObjectNode object = mapper.createObjectNode();
+	    object.put(Constants.JSON_OPERATION_KEY, Constants.DEVICE_GROUP_REMOVE);
+	    object.put(Constants.JSON_NOTIFICATION_KEY, notificationKey);
+	    object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
+	    return object;
+	}
+	
 	private ObjectNode getPayload() {
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode object = mapper.createObjectNode();
@@ -265,6 +353,11 @@ public class FirebaseMessage {
 		public static final String FCM_SEND_ENDPOINT = "https://fcm.googleapis.com/fcm/send";
 
 		/**
+		 * Endpoint for create/add/remove device groups.
+		 */
+		public static final String FCM_GROUP_ENDPOINT = "https://android.googleapis.com/gcm/googlenotification";
+
+		/**
 		 * User defined collapse-key for collapse parameter. Maximum 4 keys allowed for single
 		 * device to use collapse.
 		 */
@@ -371,6 +464,36 @@ public class FirebaseMessage {
 		 */
 		public static final String ERROR_MISSING_REGISTRATION = "MissingRegistration";
 
+		/**
+		 * HTTP JSON parameter for creating group of device.
+		 */
+		public static final String DEVICE_GROUP_CREATE = "create";
+		
+		/**
+		 * HTTP JSON parameter for adding device in group of device.
+		 */
+		public static final String DEVICE_GROUP_ADD = "add";
+		
+		/**
+		 * HTTP JSON parameter for deleting device from group of device.
+		 */
+		public static final String DEVICE_GROUP_REMOVE = "remove";
+		
+		/**
+		 * JSON-only field representing the operation type of device group operation.
+		 */
+		public static final String JSON_OPERATION_KEY = "operation";
+		
+		/**
+		 * JSON-only field representing the unique Notification key name for device group.
+		 */
+		public static final String JSON_NOTIFICATION_KEY_NAME = "notification_key_name";
+
+		/**
+		 * JSON-only field representing the unique Notification key for device group.
+		 */
+		public static final String JSON_NOTIFICATION_KEY = "notification_key";
+	
 	}
 
 }
