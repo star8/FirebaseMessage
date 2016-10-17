@@ -1,6 +1,9 @@
 package lab.star.firebase.FirebaseMessage;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -21,6 +24,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -279,7 +284,25 @@ public class FirebaseMessage {
 	public String createDeviceGroup() {
 		checkInputForDeviceGroupMessage();
 		// write up your network code here
-		return "REGISTRATION_ID";
+		if (this.keyName == null || (this.keyName != null && this.keyName.length() == 0)) {
+			throw new IllegalArgumentException("Invalid Input");
+		}
+
+		// Make json payload for create new group of device
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode object = mapper.createObjectNode();
+		object.put("operation", "create");
+		object.put("notification_key_name", keyName);
+		object.putPOJO("registration_ids", regIds);
+
+		String jsonBody = null;
+		try {
+			jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(object);
+		} catch (JsonProcessingException e1) {
+			e1.printStackTrace();
+		}
+
+		return makeHttpPostForDeviceGroup(jsonBody);
 	}
 
 	public String addDeviceGroup() {
@@ -290,13 +313,94 @@ public class FirebaseMessage {
 		if (this.keyName == null || (this.keyName != null && this.keyName.length() == 0)) {
 			throw new IllegalArgumentException("Invalid Input");
 		}
-		// write up your network code here
-		return "REGISTRATION_ID";
+		// Make json payload for add device in group
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode object = mapper.createObjectNode();
+		object.put("operation", "add");
+		object.put("notification_key_name", keyName);
+		object.put("notification_key", notificationKey);
+		object.putPOJO("registration_ids", regIds);
+
+		String jsonBody = null;
+		try {
+			jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(object);
+		} catch (JsonProcessingException e1) {
+			e1.printStackTrace();
+		}
+
+		return makeHttpPostForDeviceGroup(jsonBody);
 	}
 
-	public void removeDeviceGroup() {
+	public String removeDeviceGroup() {
 		checkInputForDeviceGroupMessage();
-		// write up your network code here
+		if (this.notificationKey == null || (this.notificationKey != null && this.notificationKey.length() == 0)) {
+			throw new IllegalArgumentException("Invalid Input");
+		}
+
+		// Make json payload for remove device in group
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode object = mapper.createObjectNode();
+		object.put("operation", "remove");
+		object.put("notification_key_name", keyName);
+		object.put("notification_key", notificationKey);
+		object.putPOJO("registration_ids", regIds);
+
+		String jsonBody = null;
+		try {
+			jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(object);
+		} catch (JsonProcessingException e1) {
+			e1.printStackTrace();
+		}
+
+		return makeHttpPostForDeviceGroup(jsonBody);
+
+	}
+
+	public String makeHttpPostForDeviceGroup(String json) {
+		HttpPost httpPost = new HttpPost(Constants.FCM_DEVICE_GROUP_ENDPOINT);
+		try {
+			httpPost.setEntity(new StringEntity(json));
+		} catch (UnsupportedEncodingException e1) {
+			e1.printStackTrace();
+		}
+		httpPost.setHeader("Accept", "application/json");
+		httpPost.setHeader("Authorization", this.registrationToken);
+		httpPost.setHeader("Content-type", "application/json");
+		httpPost.setHeader("project_id", projectId);
+		HttpResponse response = null;
+		try {
+			response = HttpClientBuilder.create().build().execute(httpPost);
+		} catch (ClientProtocolException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		if (response == null)
+			return null;
+
+		BufferedReader reader = null;
+		try {
+			reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent(), "UTF-8"));
+		} catch (UnsupportedOperationException | IOException e) {
+			e.printStackTrace();
+		}
+		String jsonResponse = "";
+		String line=null;
+		try {
+			while((line = reader.readLine()) != null)
+			jsonResponse = jsonResponse+line;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		// Extract notification Key
+		JSONObject jObject = new JSONObject(jsonResponse);
+		try {
+			return jObject.getString("notification_key");
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	private interface Constants {
@@ -306,6 +410,11 @@ public class FirebaseMessage {
 		 */
 		public static final String FCM_SEND_ENDPOINT = "https://fcm.googleapis.com/fcm/send";
 
+		/**
+		 * Endpoint for create/add/remove device groups.
+		 */
+		public static final String FCM_DEVICE_GROUP_ENDPOINT = "https://android.googleapis.com/gcm/notification";
+		
 		/**
 		 * User defined collapse-key for collapse parameter. Maximum 4 keys
 		 * allowed for single device to use collapse.
