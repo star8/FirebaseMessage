@@ -59,6 +59,7 @@ public class FirebaseMessage {
 	private String projectId;
 	private String keyName;
 	private String notificationKey;
+	private boolean contentAvailable;
 
 	private FirebaseMessage() {
 		super();
@@ -66,6 +67,7 @@ public class FirebaseMessage {
 		this.ttl = Constants.DEFAUTL_TIME_TO_LIVE;
 		this.collapsible = false;
 		this.delayWhileIdeal = false;
+		this.contentAvailable=true;
 		this.connTimeOut = Constants.DEFAUTL_CONNECTION_TIMEOUT;
 	}
 
@@ -125,6 +127,10 @@ public class FirebaseMessage {
 		this.delayWhileIdeal = delayWhileIdeal;
 		return this;
 	}
+	public FirebaseMessage contentAvailable(boolean contentAvailable) {
+		this.contentAvailable =contentAvailable;
+		return this;
+	}
 
 	private ObjectNode getPayload() {
 		ObjectMapper mapper = new ObjectMapper();
@@ -143,8 +149,13 @@ public class FirebaseMessage {
 				object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
 			}
 		}
-		if (collapsible)
+		if (collapsible) {
 			object.put(Constants.PARAM_COLLAPSE_KEY, Constants.COLLAPSE_KEY);
+		}
+		if (contentAvailable) {
+			object.put(Constants.CONTENT_AVAILABLE, contentAvailable);
+		}
+		
 		return object;
 	}
 
@@ -420,6 +431,12 @@ public class FirebaseMessage {
 		 * allowed for single device to use collapse.
 		 */
 		public static final String COLLAPSE_KEY = "collapse_key";
+		
+		/**
+		 * User defined collapse-key for collapse parameter. Maximum 4 keys
+		 * allowed for single device to use collapse.
+		 */
+		public static final String CONTENT_AVAILABLE = "content_available";
 
 		/**
 		 * Parameter for Header content-type.
