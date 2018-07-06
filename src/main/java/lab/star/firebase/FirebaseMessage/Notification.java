@@ -2,6 +2,9 @@ package lab.star.firebase.FirebaseMessage;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /*
@@ -27,6 +30,9 @@ public class Notification {
 	private String title;
 	@JsonProperty
 	private String icon;
+	
+	@JsonProperty
+	private String sound;
 
 	private Notification() {
 
@@ -46,6 +52,28 @@ public class Notification {
 	public Notification icon(String icon) {
 		this.icon=icon;
 		return this;
+	}
+	public Notification sound(String sound) {
+		this.sound=sound;
+		return this;
+	}
+	
+	public JsonNode toJson() {
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode object = mapper.createObjectNode();
+		if (title!=null && title.length()>0) {
+			object.put("title", title);
+		}
+		if (body!=null && body.length()>0) {
+			object.put("body", body);
+		}
+		if (sound!=null && sound.length()>0) {
+			object.put("sound", sound);
+		}
+		if (icon!=null && icon.length()>0) {
+			object.put("icon", icon);
+		}
+		return object;
 	}
 	
 	void checkInput(){

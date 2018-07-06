@@ -15,6 +15,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -60,6 +61,8 @@ public class FirebaseMessage {
 	private String keyName;
 	private String notificationKey;
 	private boolean contentAvailable;
+	private boolean mutableContent;
+	private Apns apns;
 
 	private FirebaseMessage() {
 		super();
@@ -102,6 +105,10 @@ public class FirebaseMessage {
 		this.data = data;
 		return this;
 	}
+	public FirebaseMessage Apns(Apns apns) {
+		this.apns = apns;
+		return this;
+	}
 
 	public FirebaseMessage priority(Priority priority) {
 		this.priority = priority;
@@ -131,29 +138,49 @@ public class FirebaseMessage {
 		this.contentAvailable =contentAvailable;
 		return this;
 	}
+	public FirebaseMessage mutableContent(boolean mutableContent) {
+		this.mutableContent =mutableContent;
+		return this;
+	}
+	
+	public FirebaseMessage print() {
+		try {
+			System.out.println(getPayload());
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return this;
+	}
 
-	private ObjectNode getPayload() {
+	private ObjectNode getPayload() throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode object = mapper.createObjectNode();
 		if (notification != null)
-			object.putPOJO(Constants.JSON_NOTIFICATION, notification);
+			object.putPOJO(Constants.JSON_NOTIFICATION, notification.toJson());
 		if (data != null)
-			object.putPOJO(Constants.JSON_PAYLOAD, data.getData());
+			object.putPOJO(Constants.JSON_PAYLOAD,  data.getData());
+		if (apns!=null) {
+			object.set("apns", apns.getApns());
+		}
 		object.put(Constants.PARAM_PRIORITY, priority.toString());
 		object.put(Constants.PARAM_TIME_TO_LIVE, ttl);
 		object.put(Constants.PARAM_DELAY_WHILE_IDLE, delayWhileIdeal);
+		if (mutableContent ) {
+			object.put(Constants.MUTABLE_CONTENT, mutableContent?1:0);
+		}
 		if (regIds != null) {
 			if (regIds.size() == 1) {
 				object.put(Constants.PARAM_TO, regIds.iterator().next());
 			} else if (regIds.size() > 1) {
-				object.putPOJO(Constants.PARAM_REGISTRATION_IDS, regIds);
+				object.putPOJO(Constants.PARAM_REGISTRATION_IDS,  regIds);
 			}
 		}
 		if (collapsible) {
 			object.put(Constants.PARAM_COLLAPSE_KEY, Constants.COLLAPSE_KEY);
 		}
 		if (contentAvailable) {
-			object.put(Constants.CONTENT_AVAILABLE, contentAvailable);
+			object.put(Constants.CONTENT_AVAILABLE, contentAvailable?true:false);
 		}
 		
 		return object;
@@ -188,7 +215,7 @@ public class FirebaseMessage {
 				.setConnectTimeout(connTimeOut).setSocketTimeout(connTimeOut).build();
 		post.setConfig(config);
 		post.setHeader(Constants.PARAM_HEADER_SERVER_KEY, registrationToken);
-		post.setHeader(Constants.PARAM_HEADER_CONTENT_TYPE, Constants.HEADER_CONTENT_TYPE_JSON);
+		post.setHeader(HttpHeaders.CONTENT_TYPE, Constants.HEADER_CONTENT_TYPE_JSON);
 		String jsonBody = null;
 		try {
 			jsonBody = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(getPayload());
@@ -207,6 +234,7 @@ public class FirebaseMessage {
 		} finally {
 			post.releaseConnection();
 		}
+		System.out.println("Printing response...."+response);
 		return response;
 	}
 
@@ -541,6 +569,11 @@ public class FirebaseMessage {
 		 * to the request.
 		 */
 		public static final String ERROR_MISSING_REGISTRATION = "MissingRegistration";
+		
+		/**
+		 * Ios specific value.
+		 */
+		public static final String MUTABLE_CONTENT = "mutable-content";
 
 	}
 
